@@ -41,7 +41,7 @@ class SymbolPriceInfo:
     totalVal: float | None = None
     buyForeignQtty: float | None = None
     sellForeignQtty: float | None = None
-    room: str | None = None
+    room: float | None = None
     indexNumber: float | None = None
 
 
