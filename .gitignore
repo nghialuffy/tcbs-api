@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Installers
+pip-wheel-metadata/
+share/python-wheels/
+
+# Unit test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checkers / linters
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# uv
+# (uv.lock is intentionally committed for reproducible dev environments)
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Transaction backups (editor / tooling)
+*.bak
+*.orig
+*.rej

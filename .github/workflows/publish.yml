@@ -1,0 +1,77 @@
+name: Publish
+
+# Publishes to PyPI via OIDC trusted publishing — no API token is stored in this repo.
+# One-time setup on PyPI (Account -> Publishing -> Add a pending publisher):
+#   PyPI project name: tcbs-api
+#   Owner:             nghialuffy
+#   Repository name:   tcbs-api
+#   Workflow name:     publish.yml
+#   Environment name:  pypi
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and validate distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # NOTE: setup-uv stopped publishing floating major tags after v7 — there is no
+      # `v8`, `v9`, or `v10` ref, so this must be pinned to an exact version.
+      - uses: astral-sh/setup-uv@v10.1.0
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Validate package metadata
+        run: uvx twine check --strict dist/*
+
+      - name: Confirm the built version matches the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(dist/*.tar.gz)
+          if [ ${#files[@]} -ne 1 ]; then
+            echo "::error::expected exactly one sdist, found ${#files[@]}"
+            exit 1
+          fi
+          built="${files[0]#dist/tcbs_api-}"
+          built="${built%.tar.gz}"
+          tag="${GITHUB_REF_NAME#v}"
+          echo "built=$built tag=$tag"
+          test "$built" = "$tag" || { echo "::error::built version $built != tag $tag"; exit 1; }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # Must match the "Environment name" in the PyPI pending publisher.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/tcbs-api
+    permissions:
+      # Required for trusted publishing: lets the job mint the short-lived OIDC token
+      # that PyPI exchanges for upload credentials.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - uses: astral-sh/setup-uv@v10.1.0
+
+      - name: Publish
+        run: uv publish --trusted-publishing automatic

@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tcbs-api"
+dynamic = ["version"]
+description = "Python client library for the TCBS Open API."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "nghialuffy" }]
+keywords = ["tcbs", "open-api", "tcbs-api", "trading", "stock", "derivative", "vietnam"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Office/Business :: Financial :: Investment",
+  "Typing :: Typed",
+]
+dependencies = [
+  "requests>=2.28",
+  "dacite>=1.8",
+  "dataclasses-json>=0.6",
+]
+
+[project.optional-dependencies]
+dev = ["mypy>=1.10", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/nghialuffy/tcbs-api"
+Repository = "https://github.com/nghialuffy/tcbs-api"
+Issues = "https://github.com/nghialuffy/tcbs-api/issues"
+Changelog = "https://github.com/nghialuffy/tcbs-api/releases"
+Documentation = "https://developers.tcbs.com.vn/"
+
+[tool.hatch.version]
+path = "tcbs_api/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["tcbs_api"]
+
+[tool.hatch.build.targets.sdist]
+include = ["tcbs_api", "README.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["F403"]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+# `dataclass_json` injects `from_json`/`to_json` onto classes at creation time, so mypy
+# cannot see those methods, nor the `DerivativeResponse[data_class]` runtime subscripting
+# used to select the envelope's element type.
+[[tool.mypy.overrides]]
+module = ["tcbs_api.service.derivative.derivative"]
+disable_error_code = ["attr-defined", "valid-type"]

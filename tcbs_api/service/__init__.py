@@ -1,0 +1,14 @@
+"""One module per API domain; each function is a thin declaration of one endpoint.
+
+Every function takes the JWT ``token`` as its final positional argument and returns a
+decoded DTO. The HTTP work — base URL, headers, verb, status check, JSON parsing — is not
+repeated in these modules: it all goes through :mod:`tcbs_api.utils.request_api`.
+
+* :mod:`tcbs_api.service.auth` — exchange an API key for a token
+* :mod:`tcbs_api.service.account` — sub-account profile
+* :mod:`tcbs_api.service.money` — cash transfers, margin deposit and withdrawal
+* :mod:`tcbs_api.service.stock_normal` — stock order lifecycle, purchasing power, assets
+* :mod:`tcbs_api.service.derivative` — derivatives cash, positions, orders, market data
+"""
+
+from __future__ import annotations
