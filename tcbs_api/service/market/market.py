@@ -12,6 +12,10 @@ filter: Python rejects a required parameter after a defaulted one, so those func
 The ``index`` parameter of the board endpoints selects a basket: 1 = HOSE, 2 = VN30,
 3 = HNX, 4 = HNX30, 5 = UPCOM, 10 = Midcap, 11 = VN100, 12 = VNAllShare, 13 = VNSmallCap,
 14 = VNXAllShare, 15 = VN50, 16 = VNSI.
+
+``investor_type`` (the ``type`` parameter) filters the supply-and-demand series by investor
+class: "sheep" (small retail), "wolf" (medium institutional), "shark" (large institutional),
+or "all" when omitted.
 """
 
 from __future__ import annotations
@@ -103,8 +107,7 @@ def get_supply_demand_intraday(
 
     `time_window` (`timeWindow`) is the bucket size in minutes — 15 or 60 — and `t_window`
     (`tWindow`) the window the moving sums are taken over, which TCBS documents only as 15.
-    `investor_type` is the ``type`` parameter: "sheep" (small retail), "wolf" (medium
-    institutional), "shark" (large institutional), or "all" when omitted.
+    `investor_type` picks the investor class — see the module docstring.
     """
     payload = request_api.get(
         f"/nyx/v1/intraday/{ticker}/bsa-ext",
@@ -124,8 +127,7 @@ def get_supply_demand_daily(
 
     Operation 5.7 — https://developers.tcbs.com.vn/docs/v1.0.0/stock/supply-demand-daily/
 
-    `investor_type` is the ``type`` parameter: "sheep", "wolf", "shark", or "all" when
-    omitted.
+    `investor_type` picks the investor class — see the module docstring.
     """
     payload = request_api.get(
         f"/nyx/v1/intraday/{ticker}/bsa",
@@ -147,8 +149,8 @@ def get_supply_demand_monthly(
     Operation 5.8 — https://developers.tcbs.com.vn/docs/v1.0.0/stock/supply-demand-monthly/
 
     `time_window` (`timeWindow`) is "1M", the only value TCBS documents, and is optional
-    because the server treats it as the default. `investor_type` is the ``type``
-    parameter: "sheep", "wolf", "shark", or "all" when omitted.
+    because the server treats it as the default. `investor_type` picks the investor class —
+    see the module docstring.
     """
     payload = request_api.get(
         f"/nyx/v1/intraday/{ticker}/bsa-month",
@@ -163,18 +165,21 @@ def get_securities_info(
     *,
     fields: str | None = None,
     filter_expression: str | None = None,
-) -> market.SecuritiesResponse:
+) -> dict:
     """Look up listing data for the securities TCBS knows about.
 
     Operation 5.11 — https://developers.tcbs.com.vn/docs/v1.0.0/stock/securities-info/
 
     `fields` is a projection of the fields to return and `filter_expression` (the ``filter``
     parameter) is an expression in ``field=value`` form, e.g. ``symbol=TCB``. Called with
-    neither, the endpoint returns every field of every security, 1000 rows at a time.
+    neither, the endpoint returns every field of every security.
+
+    The OpenAPI document declares no response for this operation, so the payload is returned
+    as the raw ``dict`` TCBS sends rather than decoded onto a model of this library's own
+    invention. See the README's known limitations.
     """
-    payload = request_api.get(
+    return request_api.get(
         "/ananke/v1/securities",
         token,
         params={"fields": fields, "filter": filter_expression},
     )
-    return request_api.decode(market.SecuritiesResponse, payload)

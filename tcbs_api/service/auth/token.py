@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from tcbs_api.dto.auth.token_response_dto import TokenResponseDto
+from tcbs_api.dto.auth.token_response import TokenResponseDto
 from tcbs_api.utils import request_api
 
 
