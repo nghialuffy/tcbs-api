@@ -1,7 +1,7 @@
 """Shared request plumbing for every TCBS Open API call.
 
 Every public function in :mod:`tcbs_api.service` funnels through this module, so the parts
-that are identical across all 28 endpoints — the production base URL, the bearer headers,
+that are identical across all 37 endpoints — the production base URL, the bearer headers,
 the HTTP verb, the status check, and the ``dacite`` decoding of the response — are written
 once instead of being repeated in each function.
 
