@@ -3,9 +3,9 @@
 Python client library for the [TCBS Open API](https://developers.tcbs.com.vn/).
 
 Thin, dependency-light wrapper over the TCBS REST endpoints: authentication, account
-information, cash transfers, stock (normal) trading, and derivatives trading. Responses
-are parsed into typed `dataclass` DTOs with `dacite`, so you get autocompletion instead
-of hand-written `dict` poking.
+information, cash transfers, stock (normal) trading, cash-market data, and derivatives
+trading. Responses are parsed into typed `dataclass` DTOs with `dacite`, so you get
+autocompletion instead of hand-written `dict` poking.
 
 The one exception is the derivative endpoints, whose response envelope is typed but whose
 `data` payload is left as a raw `dict` — see [Known limitations](#known-limitations).
@@ -101,19 +101,40 @@ response = stock_service.place_order(request_dto, account_no="0001201435", token
 print(response.orderId)
 ```
 
+## Reading market data
+
+```python
+from tcbs_api.service.market import market as market_service
+
+# Symbol and price board: a basket, or an explicit list of symbols (the two are
+# mutually exclusive, and are keyword-only because `token` comes first here).
+board = market_service.get_symbol_and_price(token, index=1)
+print(board.tradingDate, board.data[0].matchPrice)
+
+# Supply and demand, filtered by investor class — here `token` stays a positional
+# argument, since the symbol is required.
+flow = market_service.get_supply_demand_daily("FPT", token, investor_type="shark")
+print(flow.data[-1].bsr)
+```
+
 ## API reference
 
-The public API mirrors the numbering used in the TCBS documentation. Every function takes
-the JWT `token` as its last positional argument, and each carries a docstring naming the
-operation it implements and linking that page — so `help(tcbs_api.service.stock_normal.normal)`
-and IDE hover text both tell you where to look.
+The public API mirrors the numbering used in the TCBS documentation. Each function carries
+a docstring naming the operation it implements and linking that page — so
+`help(tcbs_api.service.stock_normal.normal)` and IDE hover text both tell you where to look.
+
+Where every argument other than `token` is one of the endpoint's optional filters, `token`
+comes **first** and the filters are keyword-only, defaulting to `None`; a `None` filter is
+left out of the query string entirely. Everywhere else `token` stays the last positional
+argument.
 
 | Module | Covers |
 | --- | --- |
 | `tcbs_api.service.auth` | Exchange an API key for a JWT token (1.1) |
 | `tcbs_api.service.account` | Account information (2.1) |
 | `tcbs_api.service.money` | Internal transfers, margin deposit and withdrawal (3.x) |
-| `tcbs_api.service.stock_normal` | Stock order lifecycle, purchasing power, assets (4.x) |
+| `tcbs_api.service.stock_normal` | Stock order lifecycle, purchasing power, assets, cash balance and cash statement (4.x) |
+| `tcbs_api.service.market` | Cash-market price board, foreign room, put-through, intraday and supply-and-demand data (5.x) |
 | `tcbs_api.service.derivative` | Derivatives cash, positions, orders (6.x), market data (7.1) |
 
 Request and response models live under `tcbs_api.dto`, grouped by the same domains.
@@ -219,12 +240,25 @@ from tcbs_api.dto.derivative_dto import TotalCashDerivativeResponse
 from tcbs_api.service.derivative import derivative as derivative_service
 
 envelope = derivative_service.get_total_cash_derivative(account_id, sub_account_id, "0", token)
-type(envelope)        # <class 'tcbs_api.dto.derivative_dto.derivative_dto.DerivativeResponse'>
-type(envelope.data)   # <class 'dict'>
+type(envelope)  # <class 'tcbs_api.dto.derivative_dto.derivative_dto.DerivativeResponse'>
+type(envelope.data)  # <class 'dict'>
 
 # Decode the payload yourself to get the typed object:
 cash = TotalCashDerivativeResponse.from_dict(envelope.data, infer_missing=True)
 ```
+
+### Two 5.x details the docs leave open
+
+The securities lookup (5.11) documents its pagination fields and the shape of a row, but
+never names the list holding the rows. `SecuritiesResponse` assumes `content`, like the
+sibling `GET /khaos/v1/loan/{accountNo}` endpoint — paginated by the same backend, and
+named in its docs. The field is optional, so a different name decodes to `None` while the
+pagination fields still fill in.
+
+Field types follow the docs: `int64` → `int` and `number`/`double` → `float`, which is why
+`PriceMatchingHistoryResponse.total` is a `float` even though it counts matches. `dacite`
+accepts an integer for a `float` field but not a float for an `int` field, so `float` is
+the tolerant choice wherever the docs do not say `int64`.
 
 ### `Optional[...]` fields have no defaults
 
