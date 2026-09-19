@@ -5,6 +5,43 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v1.0.0.html).
 
+## [0.0.3] - 2026-09-21
+
+### Changed
+
+- **Import paths no longer repeat "dto".** `tcbs_api.dto.derivative_dto.derivative_dto` →
+  `tcbs_api.dto.derivative.derivative`; `tcbs_api.dto.stock_normal.stock_normal_dto` →
+  `…stock_normal.stock_normal`; `tcbs_api.dto.auth.token_response_dto` →
+  `…token_response`; `tcbs_api.dto.account.account_information_response` → `…account`.
+  Because the derivative DTO module is now itself called `derivative`,
+  `tcbs_api.service.derivative` lists its twelve functions explicitly instead of
+  re-exporting with a wildcard — the same shadowing trap `tcbs_api.service.money` guards
+  against.
+- **Every DTO carries exactly the fields `openapi-v1.0.0.json` declares.** Re-deriving the
+  models from the document changed several shapes: 4.4 and 4.5 no longer share one model
+  (`OrderSearchResponse(orders=…)` vs `OrderDetailResponse`), the purchasing-power `Response`
+  split into `PurchasingPowerResponse` (4.7) and `PurchasingPowerBySymbolResponse` (4.8/4.9),
+  4.3 is `error`/`message`, 4.14 is `assets: list[StockAsset]`, 2.1 is `basicInfo` (a dict)
+  plus `bankSubAccounts`, and request bodies follow the document's `required` lists. Payloads
+  it leaves untyped — 6.1, 6.11, the two margin operations, and 5.11, which it does not
+  describe at all — stay raw `dict`s.
+
+### Removed
+
+- Fields the document never declares, and the models that existed to hold them:
+  `BasicInfo`, `PersonalInfo`, `BankAccount`, `OrderInfo`, `IAInfo`, `DataX`, `Detail`,
+  `StockHoldingInfo`, `SeInfoDTO`, the purchasing-power `Response`,
+  `TotalCashDerivativeResponse`, `DepositDerivativeResponseDTO`,
+  `CancelOrderConditionDerivativeResponseDTO`, and the securities models
+  (`SecuritiesResponse`, `SecuritiesInfo`, `SecuritiesListingInfo`).
+
+### Fixed
+
+- Fields the document declares that the models lacked or mistyped: `BankSubAccount.bankCode`;
+  `float` for the declared `number` fields (`quoteQtty`, `qtty`, `volume`, `matchVolume`);
+  `str` for `showPrice`, `isCancel` and `isAmend`; `int` for `deliver`/`receive`; and `None`
+  defaults on the fields the document marks optional.
+
 ## [0.0.2] - 2026-09-20
 
 ### Added

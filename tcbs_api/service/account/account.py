@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from tcbs_api.dto.account.account_information_response import AccountInformationResponse
+from tcbs_api.dto.account.account import AccountInformationResponse
 from tcbs_api.utils import request_api
 
 
