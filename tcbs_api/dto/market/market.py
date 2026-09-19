@@ -1,15 +1,7 @@
 """Cash-market data models: price board, foreign room, put-through, intraday supply and demand.
 
-Field names keep the camelCase spelling TCBS uses, like the rest of :mod:`tcbs_api.dto`.
-Types follow the TCBS documentation: a field documented as ``int64`` is typed ``int``,
-while one documented as ``number``/``double`` is typed ``float`` — ``dacite`` accepts an
-integral JSON value for a ``float`` field but not the other way round, so ``float`` keeps
-decoding working however TCBS serializes a count.
-
-Fields the documentation marks optional carry a ``None`` default, and so do the arrays
-whose name the documentation uses but never declares as a row (``PutThroughResponse``'s
-three lists and ``SecuritiesResponse.content``). ``from_dict`` raises for a declared field
-the payload omits, so a default is what makes an optional field optional at decode time.
+Field names keep the camelCase spelling TCBS uses, and types follow the document's; the
+typing and optionality rules shared by every model live in :mod:`tcbs_api.dto`.
 """
 
 from __future__ import annotations
@@ -208,68 +200,3 @@ class SupplyDemandMonthlyResponse:
 
     ticker: str
     data: list[SupplyDemandPoint]
-
-
-@dataclass
-class SecuritiesListingInfo:
-    """The listing details nested under one security as ``securitiesInfo`` (5.11).
-
-    ``mortageRatioMax`` is spelled the way TCBS spells it.
-    """
-
-    symbol: str
-    status: str
-    listingQtty: int
-    txDate: str
-    listingStatus: str
-    tradeUnit: int
-    ceilingPrice: int
-    floorPrice: int
-    tradeLot: int
-    tradeBuySell: str
-    basicPrice: int | None = None
-    marginLimitMax: int | None = None
-    currentRoom: int | None = None
-    securedRatioMax: float | None = None
-    mortageRatioMax: float | None = None
-
-
-@dataclass
-class SecuritiesInfo:
-    """One security of the 5.11 lookup: the basic record plus its listing details."""
-
-    codeId: str
-    issuerId: str
-    issuerName: str
-    symbol: str
-    secType: str
-    investmentType: str
-    issueDate: str
-    expDate: str
-    parValue: float
-    tradePlace: str
-    status: str
-    securitiesInfo: SecuritiesListingInfo | None = None
-    underlyingSymbol: str | None = None
-    coveredWarrantType: str | None = None
-    exercisePrice: float | None = None
-    halt: str | None = None
-
-
-@dataclass
-class SecuritiesResponse:
-    """Response of ``get_securities_info`` (operation 5.11) — a page of securities.
-
-    TCBS documents the pagination fields and the shape of a row, but never names the list
-    holding the rows. The sibling ``GET /khaos/v1/loan/{accountNo}`` endpoint is paginated
-    the same way and calls its list ``content``, so that is the name assumed here; it is
-    optional so that a different name decodes to ``None`` instead of raising.
-    """
-
-    totalElements: int
-    totalPages: int
-    size: int
-    number: int
-    first: bool
-    last: bool
-    content: list[SecuritiesInfo] | None = None

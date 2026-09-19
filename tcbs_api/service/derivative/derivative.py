@@ -11,13 +11,13 @@ import json
 from dataclasses import asdict
 from typing import Any, TypeVar
 
-from tcbs_api.dto.derivative_dto import derivative_dto
+from tcbs_api.dto.derivative import derivative
 from tcbs_api.utils import request_api
 
 T = TypeVar("T")
 
 
-def _envelope(data_class: type[T], payload: Any) -> derivative_dto.DerivativeResponse[T]:
+def _envelope(data_class: type[T], payload: Any) -> derivative.DerivativeResponse[T]:
     """Unwrap one ``{cmd, rc, rs, oID, data}`` envelope into its declared DTO.
 
     Note that the envelope's ``data`` is left as a raw ``dict``: ``dataclasses_json``
@@ -26,7 +26,7 @@ def _envelope(data_class: type[T], payload: Any) -> derivative_dto.DerivativeRes
 
         data_class.from_dict(envelope.data, infer_missing=True)
     """
-    return derivative_dto.DerivativeResponse[data_class].from_json(json.dumps(payload))
+    return derivative.DerivativeResponse[data_class].from_json(json.dumps(payload))
 
 
 def get_total_cash_derivative(
@@ -34,7 +34,7 @@ def get_total_cash_derivative(
     sub_account_id: str,
     get_type: str,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.TotalCashDerivativeResponse]:
+) -> derivative.DerivativeResponse[dict]:
     """Get the derivatives cash, margin and collateral summary.
 
     Operation 6.1 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/account-status/
@@ -44,7 +44,7 @@ def get_total_cash_derivative(
         token,
         params={"accountId": account_id, "subAccountId": sub_account_id, "getType": get_type},
     )
-    return _envelope(derivative_dto.TotalCashDerivativeResponse, payload)
+    return _envelope(dict, payload)
 
 
 def get_asset_position_close(
@@ -54,7 +54,7 @@ def get_asset_position_close(
     page_no: int,
     page_size: int,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.AssetPositionCloseDerivativeResponse]:
+) -> derivative.DerivativeResponse[derivative.AssetPositionCloseDerivativeResponse]:
     """Get closed derivatives positions.
 
     Operation 6.2 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/position-closed/
@@ -72,14 +72,14 @@ def get_asset_position_close(
             "pageSize": page_size,
         },
     )
-    return _envelope(derivative_dto.AssetPositionCloseDerivativeResponse, payload)
+    return _envelope(derivative.AssetPositionCloseDerivativeResponse, payload)
 
 
 def get_asset_position_open(
     account_id: str,
     sub_account_id: str,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.AssetPositionOpenDerivativeResponse]:
+) -> derivative.DerivativeResponse[derivative.AssetPositionOpenDerivativeResponse]:
     """Get open derivatives positions.
 
     Operation 6.3 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/position-open/
@@ -89,7 +89,7 @@ def get_asset_position_open(
         token,
         params={"accountId": account_id, "subAccountId": sub_account_id},
     )
-    return _envelope(derivative_dto.AssetPositionOpenDerivativeResponse, payload)
+    return _envelope(derivative.AssetPositionOpenDerivativeResponse, payload)
 
 
 def get_list_order_normal(
@@ -100,7 +100,7 @@ def get_list_order_normal(
     order_type: str,
     status: str,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.ListOrderNormalDerivativeResponse]:
+) -> derivative.DerivativeResponse[derivative.ListOrderNormalDerivativeResponse]:
     """Get the derivatives order book for one day.
 
     Operation 6.6 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/get-normal-orders/
@@ -117,7 +117,7 @@ def get_list_order_normal(
             "status": status,
         },
     )
-    return _envelope(derivative_dto.ListOrderNormalDerivativeResponse, payload)
+    return _envelope(derivative.ListOrderNormalDerivativeResponse, payload)
 
 
 def get_list_order_condition(
@@ -129,7 +129,7 @@ def get_list_order_condition(
     order_type: str,
     symbol: str,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.ListOrderConditionDerivativeResponse]:
+) -> derivative.DerivativeResponse[derivative.ListOrderConditionDerivativeResponse]:
     """Get the derivatives conditional-order book.
 
     Operation 6.7 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/get-condition-orders/
@@ -150,82 +150,85 @@ def get_list_order_condition(
             "Symbol": symbol,
         },
     )
-    return _envelope(derivative_dto.ListOrderConditionDerivativeResponse, payload)
+    return _envelope(derivative.ListOrderConditionDerivativeResponse, payload)
 
 
 def place_order(
-    request_dto: derivative_dto.PlaceOrderDto,
+    request_dto: derivative.PlaceOrderDto,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.OrderNormalDerivativeResponse]:
+) -> derivative.DerivativeResponse[derivative.OrderNormalDerivativeResponse]:
     """Place a derivatives order.
 
     Operation 6.4 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/place-order/
     """
     payload = request_api.post("/khronos/v1/order/place", token, body=asdict(request_dto))
-    return _envelope(derivative_dto.OrderNormalDerivativeResponse, payload)
+    return _envelope(derivative.OrderNormalDerivativeResponse, payload)
 
 
 def place_order_condition(
-    request_dto: derivative_dto.OrderConditionDerivativeRequestDTO,
+    request_dto: derivative.OrderConditionDerivativeRequestDTO,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.OrderConditionDerivativeResponseDTO]:
+) -> derivative.DerivativeResponse[derivative.OrderConditionDerivativeResponseDTO]:
     """Place a derivatives conditional order.
 
     Operation 6.5 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/place-condition-order/
     """
     payload = request_api.post("/khronos/v1/order/condition/place", token, body=asdict(request_dto))
-    return _envelope(derivative_dto.OrderConditionDerivativeResponseDTO, payload)
+    return _envelope(derivative.OrderConditionDerivativeResponseDTO, payload)
 
 
 def edit_place_order(
-    request_dto: derivative_dto.EditOrderNormalDerivativeRequestDTO,
+    request_dto: derivative.EditOrderNormalDerivativeRequestDTO,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.EditOrderNormalDerivativeResponseDTO]:
+) -> derivative.DerivativeResponse[derivative.EditOrderNormalDerivativeResponseDTO]:
     """Amend a derivatives order.
 
     Operation 6.8 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/update-order/
     """
     payload = request_api.post("/khronos/v1/order/change", token, body=asdict(request_dto))
-    return _envelope(derivative_dto.EditOrderNormalDerivativeResponseDTO, payload)
+    return _envelope(derivative.EditOrderNormalDerivativeResponseDTO, payload)
 
 
 def edit_place_order_condition(
-    request_dto: derivative_dto.EditOrderConditionDerivativeRequestDTO,
+    request_dto: derivative.EditOrderConditionDerivativeRequestDTO,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.EditOrderConditionDerivativeResponseDTO]:
+) -> derivative.DerivativeResponse[derivative.EditOrderConditionDerivativeResponseDTO]:
     """Amend a derivatives conditional order.
 
     Operation 6.9 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/update-condition-order/
     """
     payload = request_api.post("/khronos/v2/order/condition/change", token, body=asdict(request_dto))
-    return _envelope(derivative_dto.EditOrderConditionDerivativeResponseDTO, payload)
+    return _envelope(derivative.EditOrderConditionDerivativeResponseDTO, payload)
 
 
 def cancel_place_order(
-    request_dto: derivative_dto.CancelOrderNormalDerivativeRequestDTO,
+    request_dto: derivative.CancelOrderNormalDerivativeRequestDTO,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.CancelOrderNormalDerivativeResponseDTO]:
+) -> derivative.DerivativeResponse[derivative.CancelOrderNormalDerivativeResponseDTO]:
     """Cancel a derivatives order.
 
     Operation 6.10 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/cancel-order/
     """
     payload = request_api.post("/khronos/v1/order/cancel", token, body=asdict(request_dto))
-    return _envelope(derivative_dto.CancelOrderNormalDerivativeResponseDTO, payload)
+    return _envelope(derivative.CancelOrderNormalDerivativeResponseDTO, payload)
 
 
 def cancel_place_order_condition(
-    request_dto: derivative_dto.CancelOrderConditionDerivativeRequestDTO,
+    request_dto: derivative.CancelOrderConditionDerivativeRequestDTO,
     token: str,
-) -> derivative_dto.DerivativeResponse[derivative_dto.CancelOrderConditionDerivativeResponseDTO]:
+) -> derivative.DerivativeResponse[dict]:
     """Cancel a derivatives conditional order.
 
     Operation 6.11 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/cancel-condition-order/
+
+    The document declares this payload as an array without item fields, so ``data`` arrives
+    as the raw ``dict`` the envelope decoder produces.
     """
     payload = request_api.post("/khronos/v1/order/condition/cancel", token, body=asdict(request_dto))
-    return _envelope(derivative_dto.CancelOrderConditionDerivativeResponseDTO, payload)
+    return _envelope(dict, payload)
 
 
-def market_information_bid_ask(token: str) -> derivative_dto.MarketInformationResponseDTO:
+def market_information_bid_ask(token: str) -> derivative.MarketInformationResponseDTO:
     """Get the derivatives price board, with best bid and offer levels.
 
     Operation 7.1 — https://developers.tcbs.com.vn/docs/v1.0.0/derivative/market-symbol/
@@ -234,4 +237,4 @@ def market_information_bid_ask(token: str) -> derivative_dto.MarketInformationRe
     an envelope, so it is decoded with ``dacite``.
     """
     payload = request_api.get("/tartarus/v1/derivatives", token)
-    return request_api.decode(derivative_dto.MarketInformationResponseDTO, payload)
+    return request_api.decode(derivative.MarketInformationResponseDTO, payload)
