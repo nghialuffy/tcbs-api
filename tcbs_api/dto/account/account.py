@@ -16,11 +16,11 @@ class BankSubAccount:
 
     accountNo: str
     accountName: str
-    bankCode: str
     accountType: str
     accountTypeName: str
     status: str
     isDefault: str
+    bankCode: str | None = None
 
 
 @dataclass
