@@ -6,10 +6,8 @@ repeated in these modules: it all goes through :mod:`tcbs_api.utils.request_api`
 
 * :mod:`tcbs_api.service.auth` — exchange an API key for a token
 * :mod:`tcbs_api.service.account` — sub-account profile
-* :mod:`tcbs_api.service.money` — cash transfers, margin deposit and withdrawal
-* :mod:`tcbs_api.service.stock_normal` — stock order lifecycle, purchasing power, assets
+* :mod:`tcbs_api.service.stock` — stock orders, trades, purchasing power, assets, cash
 * :mod:`tcbs_api.service.market` — cash-market price board, foreign room, supply and demand
-* :mod:`tcbs_api.service.derivative` — derivatives cash, positions, orders, market data
 """
 
 from __future__ import annotations

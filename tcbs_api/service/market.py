@@ -20,7 +20,7 @@ or "all" when omitted.
 
 from __future__ import annotations
 
-from tcbs_api.dto.market import market
+from tcbs_api.dto import market
 from tcbs_api.utils import request_api
 
 
@@ -53,6 +53,9 @@ def get_foreign_room(token: str, *, index: int | None = None) -> market.ForeignR
     Operation 5.3 — https://developers.tcbs.com.vn/docs/v1.0.0/stock/foreign-room/
 
     `index` picks the basket — codes in the module docstring.
+
+    Each row is the full price board plus the foreign figures, with every price and quantity
+    quoted as a string — see :class:`~tcbs_api.dto.market.ForeignRoomInfo`.
     """
     payload = request_api.get("/tartarus/v1/tickerSnaps", token, params={"index": index})
     return request_api.decode(market.ForeignRoomResponse, payload)
@@ -84,6 +87,10 @@ def get_price_matching_history(
     Pages are numbered from 0 and `size` is capped at 100 by TCBS. `head_index` (`headIndex`
     on the wire) serves reverse paging and defaults to -1 server-side, so leaving it out
     takes that default.
+
+    Each row carries more than the document declares — see
+    :class:`~tcbs_api.dto.market.PriceMatchingInfo` — and the response closes with the
+    trading date in ``d``.
     """
     payload = request_api.get(
         f"/nyx/v1/intraday/{ticker}/his/paging",
@@ -165,7 +172,7 @@ def get_securities_info(
     *,
     fields: str | None = None,
     filter_expression: str | None = None,
-) -> dict:
+) -> market.SecuritiesResponse:
     """Look up listing data for the securities TCBS knows about.
 
     Operation 5.11 — https://developers.tcbs.com.vn/docs/v1.0.0/stock/securities-info/
@@ -174,12 +181,17 @@ def get_securities_info(
     parameter) is an expression in ``field=value`` form, e.g. ``symbol=TCB``. Called with
     neither, the endpoint returns every field of every security.
 
-    The OpenAPI document declares no response for this operation, so the payload is returned
-    as the raw ``dict`` TCBS sends rather than decoded onto a model of this library's own
-    invention. See the README's known limitations.
+    The OpenAPI document declares no response at all for this operation, so
+    :class:`~tcbs_api.dto.market.SecuritiesResponse` and its nested models are derived from a
+    real payload. That payload is a page of ``content`` rows, each with a ``securitiesInfo``
+    block holding the listing prices and limits.
+
+    Those models describe the full projection — ``fields=all``, or no ``fields`` at all — so
+    narrow ``fields`` only as far as the model can still be filled in.
     """
-    return request_api.get(
+    payload = request_api.get(
         "/ananke/v1/securities",
         token,
         params={"fields": fields, "filter": filter_expression},
     )
+    return request_api.decode(market.SecuritiesResponse, payload)
