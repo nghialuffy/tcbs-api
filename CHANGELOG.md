@@ -5,6 +5,28 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v1.0.0.html).
 
+## [0.0.2] - 2026-09-20
+
+### Added
+
+- **Cash-market data (5.x).** New `tcbs_api.service.market` and `tcbs_api.dto.market`
+  modules wrapping eight market-data endpoints: `get_symbol_and_price` (5.1),
+  `get_foreign_room` (5.3), `get_put_through` (5.4), `get_price_matching_history` (5.5),
+  `get_supply_demand_intraday` (5.6), `get_supply_demand_daily` (5.7),
+  `get_supply_demand_monthly` (5.8) and `get_securities_info` (5.11). Each function's
+  docstring links its TCBS documentation page.
+- **Cash statement (4.16).** `stock_normal.get_cash_statement` wraps
+  `GET /erebos/v2/digital/trans-hist-cashStatements`, modelled by `CashStatementResponse`,
+  `CashStatementPage` and `CashStatementDetail`.
+- Market-data functions take `token` first and their optional filters as keyword-only
+  arguments, since none of those filters can precede a required `token`; the rest of the
+  library keeps `token` as its last positional argument. A `None` filter is omitted from
+  the query string.
+- Coverage is now 37 of the 44 operations in the TCBS OpenAPI document. Still missing:
+  4.10 margin quota, 4.11 risk and margin ratios, 4.12 supplementary loan package,
+  4.13 loan list, 4.17 debt lookup, 4.18 margin pricing policy, and the REST
+  `/api/v1/derivatives/contracts` price board.
+
 ## [0.0.1] - 2026-09-19
 
 ### Changed

@@ -12,6 +12,7 @@ Sub-packages:
 * :mod:`tcbs_api.dto.auth` — the JWT token response
 * :mod:`tcbs_api.dto.money` — cash transfers, margin deposit and withdrawal
 * :mod:`tcbs_api.dto.stock_normal` — stock orders, purchasing power, assets and cash
+* :mod:`tcbs_api.dto.market` — cash-market price board, foreign room, supply and demand
 * :mod:`tcbs_api.dto.derivative_dto` — derivatives cash, positions, orders and market data
 """
 
