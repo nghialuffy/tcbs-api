@@ -130,3 +130,35 @@ def get_cash_investment(account_no: str, token: str) -> stock_normal_dto.CashInv
     """
     payload = request_api.get(f"/aion/v1/accounts/{account_no}/cashInvestments", token)
     return request_api.decode(stock_normal_dto.CashInvestmentResponse, payload)
+
+
+def get_cash_statement(
+    account_no: str,
+    from_date: str,
+    to_date: str,
+    page_size: int,
+    page_index: int,
+    transaction_code: str,
+    token: str,
+) -> stock_normal_dto.CashStatementResponse:
+    """Get the cash statement — the transaction history — of a sub-account.
+
+    Operation 4.16 — https://developers.tcbs.com.vn/docs/v1.0.0/stock/cash-statement/
+
+    `account_no` is the sub-account number and `from_date`/`to_date` are ``YYYY-MM-DD``
+    strings. `transaction_code` narrows the statement to one transaction type; TCBS
+    documents the parameter but not the codes it accepts.
+    """
+    payload = request_api.get(
+        "/erebos/v2/digital/trans-hist-cashStatements",
+        token,
+        params={
+            "accountno": account_no,
+            "fromDate": from_date,
+            "toDate": to_date,
+            "pageSize": page_size,
+            "pageIndex": page_index,
+            "transactionCode": transaction_code,
+        },
+    )
+    return request_api.decode(stock_normal_dto.CashStatementResponse, payload)

@@ -261,3 +261,36 @@ class CashInvestmentResponse:
     pageSize: int
     pageIndex: int
     data: list[CashInvestmentInfo]
+
+
+@dataclass
+class CashStatementDetail:
+    """One line of a sub-account's cash statement."""
+
+    custodyID: str
+    transactionCode: str
+    transactionName: str
+    debitAmount: float
+    creditAmount: float
+    businessDate: str
+    transactionDate: str
+    descriptions: str
+
+
+@dataclass
+class CashStatementPage:
+    """The page of statement lines, with its own totals."""
+
+    pageIndex: int
+    pageSize: int
+    totalCreditAmount: int
+    totalDebitAmount: int
+    totalCount: int
+    data: list[CashStatementDetail]
+
+
+@dataclass
+class CashStatementResponse:
+    """Response of ``get_cash_statement`` — TCBS nests the page one level down."""
+
+    response: CashStatementPage
