@@ -64,14 +64,15 @@ OTP = "your-otp"
 # and reuse it instead of calling this on every request.
 token = token_service.get_token(API_KEY, OTP).token
 
-# 2.1. Account information.
+# 2.1. Account information. The `fields` parameter decides what comes back;
+#       `basicInfo` is a plain dict and `bankSubAccounts` a list of records.
 custody_code = "0001201435"
 info = account_service.get_subaccount_info(
     custody_code,
-    "basicInfo,personalInfo,bankSubAccounts,bankAccounts",
+    "basicInfo,bankSubAccounts",
     token,
 )
-print(info.personalInfo.fullName)
+print(info.bankSubAccounts[0].accountNo, info.basicInfo["tcbsId"])
 
 # 3.1. Transfer money between sub-accounts.
 request_dto = money_dto.TransferBetweenSubaccountRequestDTO(
@@ -87,10 +88,10 @@ print(result.code, result.message)
 ## Placing an order
 
 ```python
-from tcbs_api.dto.stock_normal import stock_normal_dto
+from tcbs_api.dto.stock_normal import stock_normal
 from tcbs_api.service.stock_normal import normal as stock_service
 
-request_dto = stock_normal_dto.PlaceOrderExternalDto(
+request_dto = stock_normal.PlaceOrderExternalDto(
     execType="NS",
     price=1000,
     priceType="LO",
@@ -123,10 +124,9 @@ The public API mirrors the numbering used in the TCBS documentation. Each functi
 a docstring naming the operation it implements and linking that page — so
 `help(tcbs_api.service.stock_normal.normal)` and IDE hover text both tell you where to look.
 
-Where every argument other than `token` is one of the endpoint's optional filters, `token`
-comes **first** and the filters are keyword-only, defaulting to `None`; a `None` filter is
-left out of the query string entirely. Everywhere else `token` stays the last positional
-argument.
+Where every argument other than `token` is an optional filter, `token` comes **first** and the
+filters are keyword-only (`None` values are dropped from the query); everywhere else `token`
+stays the last positional argument.
 
 | Module | Covers |
 | --- | --- |
@@ -228,45 +228,44 @@ uv publish --publish-url https://test.pypi.org/legacy/ --token pypi-<testpypi-to
 
 ## Known limitations
 
-### Derivative payloads are not typed
+### The models mirror the document, so three things follow
 
-The derivative endpoints return a `DerivativeResponse` envelope, but its generic `data`
-field stays a raw `dict`. `dataclasses_json` cannot resolve the `Generic[T]` parameter —
-it warns `Unknown type ~T at DerivativeResponse.data` — so the declared element type is
-never applied:
+Every DTO field comes from `openapi-v1.0.0.json` for the operation that returns it — no
+inferred fields:
+
+- **Payloads the document leaves untyped stay `dict`s** — the derivative `data` for 6.1 and
+  6.11, and the `data` of the two margin operations:
+
+  ```python
+  from tcbs_api.service.derivative import derivative as derivative_service
+
+  envelope = derivative_service.get_total_cash_derivative(account_id, sub_account_id, "0", token)
+  type(envelope.data)  # <class 'dict'> — the document lists no fields for it
+  ```
+
+  5.11 is the extreme case: the document gives it no response at all, so `get_securities_info`
+  returns the JSON body undecoded.
+- **Containers default to `None`.** The document marks no response field required, so scalars
+  decode as-is while `orders`, `data`, `assets`, `response` and friends can be `None` — an
+  empty collection can arrive as an omitted key, and `dacite` raises for a declared field the
+  payload omits.
+- **`int64` is `int`, `number` is `float`** — so `PriceMatchingHistoryResponse.total` is a
+  `float` even though it counts matches. `dacite` accepts an integer for a `float` field but
+  not a float for an `int` field, which is why anything the document does not pin to `int64`
+  is a `float`.
+
+### `Optional[...]` fields in the derivative models have no defaults
+
+The derivative models are decoded with `dataclasses_json`, which raises `KeyError` for a
+missing field unless it has a `= None` default. Pass `infer_missing=True` to tolerate missing
+keys (and extra ones):
 
 ```python
-from tcbs_api.dto.derivative_dto import TotalCashDerivativeResponse
-from tcbs_api.service.derivative import derivative as derivative_service
+from tcbs_api.dto.derivative import ListOrderNormalDerivativeResponse
 
-envelope = derivative_service.get_total_cash_derivative(account_id, sub_account_id, "0", token)
-type(envelope)  # <class 'tcbs_api.dto.derivative_dto.derivative_dto.DerivativeResponse'>
-type(envelope.data)  # <class 'dict'>
-
-# Decode the payload yourself to get the typed object:
-cash = TotalCashDerivativeResponse.from_dict(envelope.data, infer_missing=True)
+raw = envelope.data[0]
+order = ListOrderNormalDerivativeResponse.from_dict(raw, infer_missing=True)
 ```
-
-### Two 5.x details the docs leave open
-
-The securities lookup (5.11) documents its pagination fields and the shape of a row, but
-never names the list holding the rows. `SecuritiesResponse` assumes `content`, like the
-sibling `GET /khaos/v1/loan/{accountNo}` endpoint — paginated by the same backend, and
-named in its docs. The field is optional, so a different name decodes to `None` while the
-pagination fields still fill in.
-
-Field types follow the docs: `int64` → `int` and `number`/`double` → `float`, which is why
-`PriceMatchingHistoryResponse.total` is a `float` even though it counts matches. `dacite`
-accepts an integer for a `float` field but not a float for an `int` field, so `float` is
-the tolerant choice wherever the docs do not say `int64`.
-
-### `Optional[...]` fields have no defaults
-
-Many DTO fields are annotated `Optional[...]` but are not given a `= None` default, so
-`dataclasses_json`'s `from_dict`/`from_json` raise `KeyError` when a field is missing from
-the payload. Pass `infer_missing=True` (as above) to tolerate missing keys. Decoding in
-the library itself is unaffected, because the non-derivative endpoints use `dacite` with
-`Config(strict=False)`.
 
 ### Operational notes
 
