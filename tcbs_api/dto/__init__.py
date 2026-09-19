@@ -1,30 +1,40 @@
-"""Request and response models, grouped by API domain.
+"""Response models, grouped by API domain.
 
-Every model is a plain ``dataclass`` whose field names match the JSON keys TCBS sends and
-expects, keeping their original camelCase — ``OrderDetail.orderID`` and
-``CashInvestmentInfo.pp0forBF`` are spelled the way the API spells them rather than the way
-Python normally would. That keeps the mapping between code and API payloads obvious, and is
-why responses can be decoded straight onto these classes.
+Every model is a pydantic v2 model whose field names match the JSON keys TCBS sends, keeping
+their original camelCase — ``OrderDetail.orderID`` and ``CashInvestmentInfo.pp0forBF`` are
+spelled the way the API spells them rather than the way Python normally would. That keeps the
+mapping between code and API payloads obvious, and is why responses decode straight onto these
+classes. A key that is *not* a legal Python name carries its spelling as ``Field(alias=...)``
+instead — ``PriceMatchingInfo.as_`` is the one example so far.
 
-Each model carries exactly the fields TCBS's OpenAPI document declares for its operation —
-nothing inferred, nothing extra — so what a DTO exposes is what the API documents. Two
-consequences apply to every module below, so they are stated once here:
+Parsing leans lenient. Fields hold defaults where the API may omit them and unknown keys are
+ignored, so a response carrying something new is not an error; a payload that does not fit the
+model — a required field missing, a value that cannot be coerced — raises pydantic's
+``ValidationError``.
 
-* A field the document declares ``int64`` is an ``int``; one declared ``number``/``double``
-  is a ``float``, because ``dacite`` accepts an integer for a ``float`` field but not a float
-  for an ``int`` field.
-* The document marks no response field required, so response scalars decode as-is while
-  containers (arrays, nested objects) default to ``None`` — an empty collection can come back
-  as an omitted key, and ``from_dict`` raises for a declared field the payload omits.
+Every model starts from the fields TCBS's OpenAPI document declares for its operation, but the
+document is wrong, thin or silent often enough that fifteen of the nineteen operations were
+corrected against live payloads — the README's *Known limitations* has the per-operation table,
+and ``tests/integration_test.py`` reports the drift whenever it reappears.
+
+An annotation is the intended type, and pydantic's lax mode gets most payloads there: the quoted
+``"30500"`` lands in a ``float`` field as ``30500.0``. A value it cannot read is a
+``ValidationError`` rather than a silently wrong object.
+
+A field always carries a description, so ``model_json_schema()`` documents the model. Where the
+text comes from, in order: the OpenAPI document's own wording; 5.11's documentation page, which is
+hand-written because the document declares no response there at all; and the captured payloads for
+everything the document leaves out. A field nothing explains says so — ``rcp`` and ``pcp`` in 5.5,
+5.4's ``color``, 5.7's ``d``, the null-valued fields 5.5 sends, and the handful of 4.14 counters
+whose meaning only TCBS knows — rather than inventing one.
 
 Sub-packages:
 
+* :mod:`tcbs_api.dto.base` — the pydantic base class every model inherits
 * :mod:`tcbs_api.dto.account` — profile information for a sub-account
 * :mod:`tcbs_api.dto.auth` — the JWT token response
-* :mod:`tcbs_api.dto.money` — cash transfers, margin deposit and withdrawal
-* :mod:`tcbs_api.dto.stock_normal` — stock orders, purchasing power, assets and cash
+* :mod:`tcbs_api.dto.stock` — stock orders, purchasing power, assets and cash
 * :mod:`tcbs_api.dto.market` — cash-market price board, foreign room, supply and demand
-* :mod:`tcbs_api.dto.derivative` — derivatives cash, positions, orders and market data
 """
 
 from __future__ import annotations
