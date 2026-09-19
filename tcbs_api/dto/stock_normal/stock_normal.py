@@ -139,8 +139,8 @@ class CommandMatchInformationResponse:
 class PurchasingPowerResponse:
     """Response of ``get_purchasing_power`` (operation 4.7)."""
 
-    purchasingPower: float
-    maxQuantity: int
+    purchasingPower: float = 0.0
+    maxQuantity: int = 0
 
 
 @dataclass
