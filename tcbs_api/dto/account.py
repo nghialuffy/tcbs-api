@@ -5,7 +5,7 @@ The endpoint's ``fields`` query parameter decides which parts come back, so ever
 ``bankSubAccounts``, ``systemUserInfo`` and ``rmRefInfo`` — is optional and defaults to
 ``None``. Fields also accepts a block's sub-field, as in ``personalInfo:fullName``, which
 returns a partial block; for that reason **every field of every model here is optional with
-a ``None`` default**, unlike the rest of :mod:`tcbs_api.dto`, where scalars are declared
+a ``None`` default**, unlike the rest of `tcbs_api.dto`, where scalars are declared
 without defaults.
 """
 
