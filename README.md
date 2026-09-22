@@ -16,6 +16,7 @@ A few payloads stay partly raw — the profile blocks no real payload pinned dow
 
 - Distribution name: `tcbs-api`
 - Import package: `tcbs_api`
+- Documentation: <https://tcbs-api.readthedocs.io/>
 - Source code: <https://github.com/nghialuffy/tcbs-api>
 - Issue tracker: <https://github.com/nghialuffy/tcbs-api/issues>
 - Official API docs: <https://developers.tcbs.com.vn/>
@@ -46,16 +47,15 @@ uv add git+https://github.com/nghialuffy/tcbs-api
 pip install git+https://github.com/nghialuffy/tcbs-api
 ```
 
-For development, install the lint/type-check extras:
+For development, install the lint, type-check and docs extras:
 
 ```bash
-uv sync    # or: pip install -e ".[dev]" — both bring in ruff, mypy and pytest
+uv sync    # or: pip install -e ".[dev,docs]" — ruff, mypy, pytest and the MkDocs stack
 ```
 
 ## Quick start
 
 ```python
-
 from tcbs_api.service import account as account_service, token as token_service
 
 API_KEY = "your-api-key"
@@ -80,7 +80,6 @@ print(info.bankSubAccounts[0].accountNo, info.basicInfo.tcbsId, info.personalInf
 ## Reading holdings and cash
 
 ```python
-
 from tcbs_api.service import stock as stock_service
 
 # 4.14. Every stock the sub-account holds, with what is sellable today.
@@ -96,7 +95,6 @@ print(cash.data[0].balance, cash.data[0].pp0, cash.data[0].blockAmountInfo.block
 ## Reading market data
 
 ```python
-
 from tcbs_api.service import market as market_service
 
 # Symbol and price board: a basket, or an explicit list of symbols (the two are
@@ -114,7 +112,7 @@ print(flow.data[-1].bsr)
 
 The public API mirrors the numbering used in the TCBS documentation. Each function carries
 a docstring naming the operation it implements and linking that page — so
-`help(tcbs_api.service.stock_normal.normal)` and IDE hover text both tell you where to look.
+`help(tcbs_api.service.stock.get_orders)` and IDE hover text both tell you where to look.
 
 Where every argument other than `token` is an optional filter, `token` comes **first** and the
 filters are keyword-only (`None` values are dropped from the query); everywhere else `token`
@@ -122,12 +120,14 @@ stays the last positional argument.
 
 | Module | Covers |
 | --- | --- |
-| `tcbs_api.service.auth` | Exchange an API key for a JWT token (1.1) |
+| `tcbs_api.service.token` | Exchange an API key for a JWT token (1.1) |
 | `tcbs_api.service.account` | Account information (2.1) |
-| `tcbs_api.service.stock_normal` | Stock orders, trades, purchasing power, holdings, cash balance and cash statement (4.x) |
+| `tcbs_api.service.stock` | Stock orders, trades, purchasing power, holdings, cash balance and cash statement (4.x) |
 | `tcbs_api.service.market` | Cash-market price board, foreign room, put-through, intraday and supply-and-demand data (5.x) |
 
-Request and response models live under `tcbs_api.dto`, grouped by the same domains.
+Request and response models live under `tcbs_api.dto`, grouped by the same domains. The
+generated reference — signatures, models and all 437 field descriptions — is at
+<https://tcbs-api.readthedocs.io/api/>.
 
 The endpoints that write — placing, amending and cancelling orders, and moving cash — are not
 wrapped, so no function here changes anything at TCBS. `get_token` is the only call that issues
@@ -161,6 +161,15 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy tcbs_api
 uv build
+```
+
+The documentation under <https://tcbs-api.readthedocs.io/> is built by MkDocs from `docs/` and
+`mkdocs.yml`, with the API reference generated from the docstrings by mkdocstrings. Preview it
+locally with:
+
+```bash
+uv run mkdocs serve    # http://127.0.0.1:8000
+uv run mkdocs build --strict
 ```
 
 The DTOs are checked against live responses by hand: paste a JWT into `ACCESS_TOKEN` at the top of
@@ -249,6 +258,8 @@ Every DTO field starts from `openapi-v1.0.0.json` for the operation that returns
 document is wrong, thin or silent often enough that fifteen of the nineteen operations were
 corrected against real payloads — `tests/integration_test.py` is what keeps this honest:
 
+<!-- The table below is included by docs/limitations.md, so edit it here only. -->
+<!-- --8<-- [start:drift-table] -->
 | Op | The document says | The endpoint actually sends |
 | --- | --- | --- |
 | 2.1 | `basicInfo`, `bankSubAccounts` | plus `personalInfo` (with `identityCard`), `personalBasicInfo`, `accountStatus`, `bankAccounts`, `systemUserInfo`, `rmRefInfo` |
@@ -265,6 +276,7 @@ corrected against real payloads — `tests/integration_test.py` is what keeps th
 | 5.5 | 8 row fields | 15 keys, including `rcp`/`pcp`, the trading date `d` and five nulls that stay `Any` |
 | 5.7 | `ticker`, `data` | plus an undocumented `d` |
 | 5.11 | no response at all | a page of `content` rows, each with a 36-field `securitiesInfo` block, and `pageable`/`sort` |
+<!-- --8<-- [end:drift-table] -->
 
 Where a payload showed a field can be absent, that field is optional rather than required, and
 fields whose JSON type no live value pinned down stay `Any` — `avatarData`, `personalBasicInfo`, an

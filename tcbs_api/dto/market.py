@@ -1,7 +1,7 @@
 """Cash-market data models: price board, foreign room, put-through, intraday supply and demand.
 
 Field names keep the camelCase spelling TCBS uses, and types follow the document's; the
-typing and optionality rules shared by every model live in :mod:`tcbs_api.dto`.
+typing and optionality rules shared by every model live in `tcbs_api.dto`.
 
 Three endpoints here are modelled from real payloads instead: 5.3 and 5.5, whose rows carry
 fields the document never declares, and 5.11, for which the document declares no response at
@@ -220,7 +220,7 @@ class SupplyDemandIntradayInfo(DtoModel):
     sd: float = Field(description="Sell Down volume.")
     sms: float = Field(description="Sell Down Moving Sum.")
     sdp: float = Field(description="Sell Down Percent.")
-    bsr: float = Field(description="Buy/Sell Ratio.")
+    bsr: float | None = Field(default=None, description="Buy/Sell Ratio.")
     t: str = Field(description="Time (HH:mm:ss).")
     s: float = Field(description="Time (timestamp).")
 

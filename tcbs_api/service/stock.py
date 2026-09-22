@@ -1,7 +1,7 @@
 """Stock (normal) trading: order and trade lookup, purchasing power, assets and cash.
 
 Every function here is a thin declaration of one endpoint — the URL, the verb and the
-response DTO. The request plumbing lives in :mod:`tcbs_api.utils.request_api`.
+response DTO. The request plumbing lives in `tcbs_api.utils.request_api`.
 """
 
 from __future__ import annotations

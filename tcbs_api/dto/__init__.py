@@ -30,11 +30,11 @@ whose meaning only TCBS knows — rather than inventing one.
 
 Sub-packages:
 
-* :mod:`tcbs_api.dto.base` — the pydantic base class every model inherits
-* :mod:`tcbs_api.dto.account` — profile information for a sub-account
-* :mod:`tcbs_api.dto.auth` — the JWT token response
-* :mod:`tcbs_api.dto.stock` — stock orders, purchasing power, assets and cash
-* :mod:`tcbs_api.dto.market` — cash-market price board, foreign room, supply and demand
+* `tcbs_api.dto.base` — the pydantic base class every model inherits
+* `tcbs_api.dto.account` — profile information for a sub-account
+* `tcbs_api.dto.token` — the JWT token response
+* `tcbs_api.dto.stock` — stock orders, purchasing power, assets and cash
+* `tcbs_api.dto.market` — cash-market price board, foreign room, supply and demand
 """
 
 from __future__ import annotations
