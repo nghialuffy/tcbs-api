@@ -2,7 +2,7 @@
 
 Every function here is a thin declaration of one endpoint — the URL, the verb, the query
 parameters and the response DTO. The request plumbing lives in
-:mod:`tcbs_api.utils.request_api`.
+`tcbs_api.utils.request_api`.
 
 ``token`` is the last positional argument except where every other argument is an optional
 filter: Python rejects a required parameter after a defaulted one, so those functions take
@@ -55,7 +55,7 @@ def get_foreign_room(token: str, *, index: int | None = None) -> market.ForeignR
     `index` picks the basket — codes in the module docstring.
 
     Each row is the full price board plus the foreign figures, with every price and quantity
-    quoted as a string — see :class:`~tcbs_api.dto.market.ForeignRoomInfo`.
+    quoted as a string — see `tcbs_api.dto.market.ForeignRoomInfo`.
     """
     payload = request_api.get("/tartarus/v1/tickerSnaps", token, params={"index": index})
     return request_api.decode(market.ForeignRoomResponse, payload)
@@ -89,7 +89,7 @@ def get_price_matching_history(
     takes that default.
 
     Each row carries more than the document declares — see
-    :class:`~tcbs_api.dto.market.PriceMatchingInfo` — and the response closes with the
+    `tcbs_api.dto.market.PriceMatchingInfo` — and the response closes with the
     trading date in ``d``.
     """
     payload = request_api.get(
@@ -182,7 +182,7 @@ def get_securities_info(
     neither, the endpoint returns every field of every security.
 
     The OpenAPI document declares no response at all for this operation, so
-    :class:`~tcbs_api.dto.market.SecuritiesResponse` and its nested models are derived from a
+    `tcbs_api.dto.market.SecuritiesResponse` and its nested models are derived from a
     real payload. That payload is a page of ``content`` rows, each with a ``securitiesInfo``
     block holding the listing prices and limits.
 
