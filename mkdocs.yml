@@ -21,6 +21,10 @@ watch:
 
 theme:
   name: material
+  # Overrides the Material templates under `overrides/`; `main.html` injects the Search Console
+  # `google-site-verification` meta tag into the site's <head>. The directory sits outside
+  # `docs_dir` so the template is not published as a static asset.
+  custom_dir: overrides
   language: en
   features:
     - content.code.copy

@@ -1,0 +1,11 @@
+{# Theme override for https://tcbs-api.readthedocs.io/.
+
+   Google Search Console proves domain ownership by fetching a `<meta name="google-site-verification">`
+   tag from the site's `<head>`. MkDocs has no config option for arbitrary meta tags, so the tag is
+   injected through the Material theme's `extrahead` block (see `theme.custom_dir` in mkdocs.yml). #}
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <meta name="google-site-verification" content="7IO2I7Zv4bqyLuA0_310gXvkiwnWHaYlL-gKj24XOq8" />
+{% endblock %}
