@@ -1,0 +1,110 @@
+# MkDocs configuration for https://tcbs-api.readthedocs.io/
+#
+# ReadTheDocs builds this file (see .readthedocs.yaml). Locally: `uv run mkdocs serve`.
+site_name: tcbs-api
+site_description: Python client library for the TCBS Open API.
+site_url: https://tcbs-api.readthedocs.io/
+repo_url: https://github.com/nghialuffy/tcbs-api
+repo_name: nghialuffy/tcbs-api
+edit_uri: edit/main/docs/
+copyright: MIT licensed
+
+docs_dir: docs
+strict: true
+
+# `mkdocs serve` reloads the site when the library changes, not just the Markdown. README.md and
+# CHANGELOG.md are included in pages via pymdownx.snippets, so editing either updates the site.
+watch:
+  - tcbs_api
+  - CHANGELOG.md
+  - README.md
+
+theme:
+  name: material
+  language: en
+  features:
+    - content.code.copy
+    - content.tooltips
+    - navigation.footer
+    - navigation.sections
+    - navigation.tabs
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quick start: getting-started/quickstart.md
+  - Guides:
+      - Account information: guides/account-information.md
+      - Holdings and cash: guides/holdings-and-cash.md
+      - Market data: guides/market-data.md
+      - Errors and validation: guides/errors-and-validation.md
+      - Known limitations: limitations.md
+  - API reference:
+      - Overview: api/index.md
+      - Services: api/services.md
+      - Models: api/models.md
+      - Support: api/support.md
+  - Development: development.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.highlight
+  - pymdownx.snippets:
+      base_path:
+        - .
+      check_paths: true
+  - pymdownx.superfences
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            # The docstrings are plain prose with backticked code — no Args:/Returns: sections —
+            # so the Google parser only ever has to fall back to rendering the description.
+            docstring_style: google
+            docstring_section_style: list
+            filters:
+              - "!^_"
+            # Modules sit under each reference page's own H1, so every module renders as an H2.
+            heading_level: 2
+            inherited_members: false
+            members_order: source
+            merge_init_into_class: true
+            modernize_annotations: true
+            separate_signature: true
+            show_bases: true
+            show_if_no_docstring: true
+            show_root_full_path: true
+            show_root_heading: true
+            show_signature_annotations: true
+            show_source: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            signature_crossrefs: true
+            summary: true

@@ -2,7 +2,7 @@
 
 Every field is one the TCBS OpenAPI document declares for the operation that returns it, and
 models are named after their operation. The typing and optionality rules shared by every model
-live in :mod:`tcbs_api.dto`.
+live in `tcbs_api.dto`.
 
 ``StockAsset`` (4.14) and ``CashInvestmentInfo`` (4.15) are the exceptions: the document
 describes those responses thinly or wrongly — 4.14 as ``assets`` records of four fields, 4.15

@@ -2,7 +2,7 @@
 
 The models are pydantic v2 models rather than dataclasses, so a response parses with coercion
 and unknown keys are ignored. A payload that does not fit raises pydantic's ``ValidationError``
-— see :func:`tcbs_api.utils.request_api.decode`.
+— see `tcbs_api.utils.request_api.decode`.
 """
 
 from __future__ import annotations

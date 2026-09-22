@@ -27,13 +27,31 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["mypy>=1.10", "ruff>=0.6", "pytest>=8"]
+# ReadTheDocs installs exactly this extra (see .readthedocs.yaml): mkdocs-material renders the
+# site described by mkdocs.yml, and mkdocstrings reads the docstrings and type annotations out of
+# the installed package to build the API reference.
+docs = [
+  "mkdocs-material>=9.7.7",
+  "mkdocstrings[python]>=1.0.6",
+  # mkdocstrings only formats the signatures it renders when a formatter is importable; ruff
+  # keeps the published reference laid out the way `uv run mkdocs serve` lays it out locally.
+  "ruff>=0.6",
+]
 
 # The same tools as a PEP 735 group, because uv installs the `dev` group by default: `uv run
 # pytest` then uses the project environment instead of falling through PATH to a system pytest on
-# a different interpreter (which is how it used to end up without pydantic). The extra above is
-# kept for `pip install -e ".[dev]"`.
+# a different interpreter (which is how it used to end up without pydantic). The extras above are
+# kept for `pip install -e ".[dev,docs]"` and for ReadTheDocs. The docs tools are repeated here so
+# that `uv run mkdocs serve` builds against the local checkout.
 [dependency-groups]
-dev = ["mypy>=1.10", "ruff>=0.6", "pytest>=8"]
+dev = [
+    "mypy>=1.10",
+    "ruff>=0.6",
+    "pytest>=8",
+    "mkdocs-material>=9.7.7",
+    "mkdocstrings[python]>=1.0.6",
+    "pre-commit>=4.6.2",
+]
 
 [project.urls]
 Homepage = "https://github.com/nghialuffy/tcbs-api"

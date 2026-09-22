@@ -49,3 +49,12 @@ env/
 *.bak
 *.orig
 *.rej
+
+# MkDocs
+# (site/ holds a local `mkdocs build`; ReadTheDocs builds its own copy.)
+site/
+
+# Local files
+
+openapi-v1.0.0.json
+tests
