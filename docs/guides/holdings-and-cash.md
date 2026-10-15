@@ -50,11 +50,14 @@ pp_fpt = stock_service.get_purchasing_power_by_symbol("0001A23456", "FPT", token
 pp_fpt_at_30 = stock_service.get_purchasing_power_by_symbol_and_price("0001A23456", "FPT", 30.0, token)
 ```
 
-`pp0` is the basic purchasing power, `ppse` the figure for the symbol the check was run at and
-`realMaxBuyQuantity` the largest quantity TCBS will actually accept. Every field is optional,
+`pp0` is the only field the API document describes — the basic purchasing power. `ppse` is the
+figure for the symbol the check was run at; `availableTrade`, `ppseref`, `realMaxBuyQuantity` and
+`minBuyQuantity` are undocumented extras the live payload carries. In particular
+`minBuyQuantity` is **not** the exchange's round-lot rule: on HOSE a lot is 100 shares, and this
+value does not change with price, so do not read an order size out of it. Every field is optional,
 because the endpoint omits the ones that do not apply. The OpenAPI document describes these
-responses as a handful of fields; the live payload is the 16-field object the model follows —
-see [Known limitations](../limitations.md#the-models-follow-live-responses-where-the-document-is-wrong).
+responses as a handful of fields; the live payload is the 16-field object the model follows — see
+[Known limitations](../limitations.md#the-models-follow-live-responses-where-the-document-is-wrong).
 
 ## Holdings
 
@@ -88,8 +91,10 @@ knowing:
 cash = stock_service.get_cash_investment("0001A23456", token)
 record = cash.data[0]
 
-print(record.balance)  # cash at TCBS
-print(record.pp0)  # basic purchasing power
+print(record.bodBalance)  # cash actually at TCBS (cashBalance mirrors it)
+print(record.bankAvlBalance)  # cash at the IA partner — another layer, not a loan
+print(record.balance)  # in transit: may be NEGATIVE, and negative is not an overdraft
+print(record.pp0)  # basic purchasing power, across every cash layer
 print(record.avlWithdraw)  # withdrawable
 print(record.blockAmountInfo.blockAmountTotal)  # blocked, in total
 
@@ -97,11 +102,21 @@ for line in record.blockAmountInfo.details or []:
     print(line.blockType, line.blockAmt)  # blocked, and why
 ```
 
-`data` carries one record per sub-account, and each record breaks the balance down by purpose
-(`buyingAmount`, `mBlockAmount` for margin, `bondBlockAmount`, `fundBlockAmount`, …) as well as
-by IA partner through `iaInfos`. Two spellings come straight from TCBS and are kept:
-`pp0forBF`/`pp0ForBond`, and the typos `cashDevident` and `avalBondBlockAmount`. `fullName`
-arrives as the four-character string `"null"` rather than JSON null, so it is typed `str`.
+`data` carries one record per sub-account. The money sits in four layers, and reading them as a
+single figure is the usual way to get the balance wrong:
+
+| Layer | Fields | Read it as |
+| --- | --- | --- |
+| Cash at TCBS | `bodBalance`, `cashBalance` | Money actually in the sub-account |
+| Cash at the IA partner | `bankAvlBalance`, `iaInfos[].available` | Real money held at the partner (e.g. TCB) |
+| In transit | `balance` | Unsettled sells and pending settlement. **May be negative — that is money moving, not an overdraft, and not spendable cash** |
+| Committed | `buyingAmount`, `secureAmtPO`, the `*BlockAmount` counters | Earmarked for pending orders, still the account's money |
+
+`pp0` is what can be spent across those layers, and it is **not** a margin figure: `pp0` above
+`bodBalance` means IA-partner cash or receivables, not leverage. Two spellings come straight from
+TCBS and are kept: `pp0forBF`/`pp0ForBond`, and the typos `cashDevident` and
+`avalBondBlockAmount`. `fullName` arrives as the four-character string `"null"` rather than JSON
+null, so it is typed `str`.
 
 ## Cash statement
 

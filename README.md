@@ -87,9 +87,9 @@ holdings = stock_service.get_asset_stock_by_sub_account("0001A23456", token)
 for holding in holdings.stock:
     print(holding.symbol, holding.availableTrading, holding.currentPrice, holding.totalQtty)
 
-# 4.15. The same account's cash: balance, buying power and what is blocked.
+# 4.15. The same account's cash: cash at TCBS, buying power and what is blocked.
 cash = stock_service.get_cash_investment("0001A23456", token)
-print(cash.data[0].balance, cash.data[0].pp0, cash.data[0].blockAmountInfo.blockAmountTotal)
+print(cash.data[0].bodBalance, cash.data[0].pp0, cash.data[0].blockAmountInfo.blockAmountTotal)
 ```
 
 ## Reading market data
@@ -126,7 +126,7 @@ stays the last positional argument.
 | `tcbs_api.service.market` | Cash-market price board, foreign room, put-through, intraday and supply-and-demand data (5.x) |
 
 Request and response models live under `tcbs_api.dto`, grouped by the same domains. The
-generated reference — signatures, models and all 437 field descriptions — is at
+generated reference — signatures, models and all 439 field descriptions — is at
 <https://tcbs-api.readthedocs.io/api/>.
 
 The endpoints that write — placing, amending and cancelling orders, and moving cash — are not
@@ -145,7 +145,7 @@ import requests
 from tcbs_api.service import stock as stock_service
 
 try:
-    response = stock_service.get_orders(account_no="0001C23456", token=token)
+    response = stock_service.get_orders(account_no="0001A23456", token=token)
 except requests.HTTPError as exc:
     print(exc.response.status_code, exc.response.json())
 ```
@@ -266,10 +266,10 @@ corrected against real payloads — `tests/integration_test.py` is what keeps th
 | 4.4 | rows under `orders` | rows under `data`, beside an `object`/`totalCount`/`pageSize`/`pageIndex` header |
 | 4.6 | page fields | the same, plus `object` |
 | 4.7 | `purchasingPower`, `maxQuantity` | the 16-field `ppse` object |
-| 4.8, 4.9 | `pp0`, `maxQtty` | the same 16-field `ppse` object, so all three share `PurchasingPowerResponse` |
+| 4.8, 4.9 | `pp0`, `maxQtty` | the same 16-field `ppse` object, so all three share `PurchasingPowerResponse`; only `pp0` is documented, and `minBuyQuantity` is not a lot rule |
 | 4.14 | `assets` records of 4 fields | `stock` records of 32 fields |
-| 4.15 | 5 fields | the whole 32-field record, with `fullName` as the *string* `"null"` |
-| 4.16 | query parameter `accountno`, full page header | `acctno`, and a page of just `{"data": []}` when nothing matches |
+| 4.15 | 5 fields | the whole 32-field record, with `fullName` as the *string* `"null"` and an undocumented `balance` that goes negative for money in transit |
+| 4.16 | query parameter `accountno`, full page header | `acctno`, the key `transationDate` (not `transactionDate`), `transactionNum`/`accountNo`, and a page of just `{"data": []}` when nothing matches |
 | 5.1 | prices and totals always present | adds `nextCeilPrice`/`nextFloorPrice`/`nextRefPrice`, omits most fields outside trading hours, so only `symbol` is required |
 | 5.3 | 13 row fields and a `tradingDate` | 28 keys, no `tradingDate`, every number quoted, and `buyForeignQtty`/`change`/`room`/`bidPrice03` absent on some symbols |
 | 5.4 | match rows of five fields | match rows also carry `color` |
@@ -279,9 +279,10 @@ corrected against real payloads — `tests/integration_test.py` is what keeps th
 <!-- --8<-- [end:drift-table] -->
 
 Where a payload showed a field can be absent, that field is optional rather than required, and
-fields whose JSON type no live value pinned down stay `Any` — `avatarData`, `personalBasicInfo`, an
-`rmRefInfo` item, 5.5's `pcps`/`hc`/`ac`/`pcpc` and `as_`, 5.3's `sellForeignQtty`, 5.4's `color`
-and 5.7's `d`. 5.5's `as` is a Python keyword, so that field is `as_` — see the alias note below.
+fields whose JSON type no live value pinned down stay `Any` — `avatarData`, 5.5's
+`pcps`/`hc`/`ac`/`pcpc` and `as_`, and 5.3's `sellForeignQtty`. `personalBasicInfo` and an
+`rmRefInfo` item stay raw `dict`s because no payload pinned their shape down. 5.5's `as` is a
+Python keyword, so that field is `as_` — see the alias note below.
 5.11's models describe the full `fields=all` projection, so a narrower `fields` raises a
 `ValidationError` naming what is missing.
 
@@ -297,7 +298,7 @@ Two things follow:
 
 ### Every field is described
 
-All 437 fields on these models carry a `Field(description=...)`, so `model_json_schema()` — and
+All 439 fields on these models carry a `Field(description=...)`, so `model_json_schema()` — and
 any documentation generated from it — explains the payload. The text comes from the OpenAPI
 document where the document has it; from 5.11's own documentation page, whose response table is
 hand-written precisely because the document declares none; and from the captured payloads
