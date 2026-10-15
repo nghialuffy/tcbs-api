@@ -126,7 +126,7 @@ class PutThroughAdvOrder(DtoModel):
     symbol: str = Field(description="Stock symbol.")
     price: float = Field(description="Price.")
     vol: float = Field(description="Volume.")
-    side: str = Field(description="Side (S = Sell).")
+    side: str = Field(description="Side: B = Buy in buyAdv, S = Sell in sellAdv.")
     time: str | None = Field(default=None, description="Time.")
 
 
@@ -139,10 +139,7 @@ class PutThroughMatch(DtoModel):
     val: float = Field(description="Value.")
     time: str = Field(description="Match time.")
     accumulatedValue: float = Field(description="Accumulated value.")
-    color: Any = Field(
-        default=None,
-        description="Not documented by TCBS; the live payload sends a value whose type is unconfirmed.",
-    )
+    color: int | None = Field(default=None, description="Not documented by TCBS; an integer (1-5 observed).")
 
 
 class PutThroughResponse(DtoModel):
@@ -221,7 +218,7 @@ class SupplyDemandIntradayInfo(DtoModel):
     sms: float = Field(description="Sell Down Moving Sum.")
     sdp: float = Field(description="Sell Down Percent.")
     bsr: float | None = Field(default=None, description="Buy/Sell Ratio.")
-    t: str = Field(description="Time (HH:mm:ss).")
+    t: str = Field(description="Time (HH:mm).")
     s: float = Field(description="Time (timestamp).")
 
 
@@ -235,13 +232,14 @@ class SupplyDemandIntradayResponse(DtoModel):
 class SupplyDemandPoint(DtoModel):
     """One bucket of a daily or monthly supply-and-demand series.
 
-    Operations 5.7 and 5.8 return rows of the same shape, so they share this model.
+    Operations 5.7 and 5.8 return rows of the same shape, so they share this model. ``t``
+    carries a time of day (``HH:mm``) in 5.7 and a date (``DD/MM``) in 5.8.
     """
 
     bup: float = Field(description="Buy Up Percent.")
     sdp: float = Field(description="Sell Down Percent.")
     bsr: float = Field(description="Buy/Sell Ratio.")
-    t: str = Field(description="Time (DD/MM).")
+    t: str = Field(description="Time: HH:mm on the daily series (5.7), DD/MM on the monthly series (5.8).")
 
 
 class SupplyDemandDailyResponse(DtoModel):
@@ -249,7 +247,7 @@ class SupplyDemandDailyResponse(DtoModel):
 
     ticker: str = Field(description="Stock symbol.")
     data: list[SupplyDemandPoint] = Field(description="The daily buckets.")
-    d: Any = Field(default=None, description="Trading date. Not documented by TCBS.")
+    d: str | None = Field(default=None, description="Trading date (DD/MM). Not documented by TCBS.")
 
 
 class SupplyDemandMonthlyResponse(DtoModel):
@@ -332,7 +330,7 @@ class SecuritiesInfo(DtoModel):
     issuerName: str = Field(description="Issuer name — blank (spaces) for a security whose issuer TCBS does not name.")
     symbol: str = Field(description="Trading symbol.")
     secType: str = Field(
-        description="Security type: 001 = ordinary share, 002 = preferred share, 003 = convertible bond, 006 = bond.",
+        description="Security type: 001 = share, 002 = preferred, 003 = convertible bond, 006 = bond, 008 = ETF.",
     )
     sbType: str = Field(description="Sub-type within secType.")
     investmentType: str = Field(description="Investment term: 001 = short, 002 = long.")

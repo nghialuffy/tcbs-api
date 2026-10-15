@@ -34,7 +34,7 @@ class OrderSearchResponse(DtoModel):
     ``object``/``totalCount``/``pageSize``/``pageIndex`` header the other paged responses carry.
     """
 
-    object: str | None = Field(default=None, description="Default = 'List'.")
+    object: str | None = Field(default=None, description="Envelope object name, list.")
     totalCount: int | None = Field(default=None, description="Total number of records.")
     pageSize: int | None = Field(default=None, description="Page size.")
     pageIndex: int | None = Field(default=None, description="Page index.")
@@ -70,7 +70,7 @@ class OrderDetail(DtoModel):
 class OrderDetailResponse(DtoModel):
     """Response of ``get_order`` (operation 4.5)."""
 
-    object: str = Field(description="Default = 'List'.")
+    object: str = Field(description="Envelope object name, list.")
     pageSize: int = Field(description="Page size.")
     pageIndex: int = Field(description="Page index.")
     totalCount: int = Field(description="Total number of records.")
@@ -94,7 +94,7 @@ class CommandMatchInformationDetailResponse(DtoModel):
 class CommandMatchInformationResponse(DtoModel):
     """Response of ``get_command_match_information`` (operation 4.6)."""
 
-    object: str | None = Field(default=None, description="Default = 'List'.")
+    object: str | None = Field(default=None, description="Envelope object name, list.")
     totalCount: int = Field(description="Total number of records returned.")
     pageSize: int = Field(description="Number of elements per page.")
     pageIndex: int = Field(description="Page index.")
@@ -111,6 +111,14 @@ class PurchasingPowerResponse(DtoModel):
     describes 4.7 as a bare ``purchasingPower``/``maxQuantity`` pair and 4.8/4.9 as
     ``pp0``/``maxQtty``. The field set is the live one; every field is optional because the
     endpoint omits the ones that do not apply (a symbol with no bracket, a null ``custodyID``).
+
+    ``pp0`` is spendable **cash**, not leverage. It gathers every cash layer the account really
+    holds — cash at TCBS, cash at the IA partner and pending receivables — so it can be larger
+    than 4.15's cash figure with no margin in use. Never infer a loan from ``pp0`` > cash.
+
+    ``minBuyQuantity`` is **not** the exchange's round-lot rule. On HOSE a lot is 100 shares, and
+    this value does not change with price, so no lot size can be read out of it; TCBS documents
+    neither it nor ``availableTrade``/``ppseref``/``realMaxBuyQuantity`` at all.
     """
 
     object: str | None = Field(default=None, description="Envelope object name, ppse.")
@@ -120,13 +128,16 @@ class PurchasingPowerResponse(DtoModel):
     custodyID: str | None = Field(default=None, description="Custody ID.")
     symbol: str | None = Field(default=None, description="Stock symbol.")
     price: float | None = Field(default=None, description="Price the check was run at.")
-    pp0: float | None = Field(default=None, description="Basic purchasing power.")
+    pp0: float | None = Field(default=None, description="Basic purchasing power: spendable cash, not leverage.")
     ppse: float | None = Field(default=None, description="Purchasing power for this symbol at this price.")
-    availableTrade: float | None = Field(default=None, description="Cash available to trade.")
-    ppseref: float | None = Field(default=None, description="Reference purchasing power.")
-    maxBuyQuantity: float | None = Field(default=None, description="Maximum buyable quantity.")
-    realMaxBuyQuantity: float | None = Field(default=None, description="Largest quantity TCBS will actually accept.")
-    minBuyQuantity: float | None = Field(default=None, description="Smallest quantity for a buy order.")
+    availableTrade: float | None = Field(default=None, description="Not documented by TCBS; cash available to trade.")
+    ppseref: float | None = Field(default=None, description="Not documented by TCBS; a reference purchasing power.")
+    maxBuyQuantity: float | None = Field(default=None, description="Maximum buyable quantity — document's maxQtty.")
+    realMaxBuyQuantity: float | None = Field(default=None, description="Undocumented; larger max than maxBuyQuantity.")
+    minBuyQuantity: float | None = Field(
+        default=None,
+        description="Not documented by TCBS, and not a lot rule — a HOSE round lot is 100 shares.",
+    )
     marginRatioLoan: str | None = Field(
         default=None,
         description="Margin ratio applied to the loan — a string in the payload.",
@@ -201,7 +212,7 @@ class CashInvestmentIaInfo(DtoModel):
 
     partner: str = Field(description="IA partner code, e.g. TCB.")
     status: str = Field(description="Whether the partner link is active (Y/N).")
-    available: float = Field(description="Cash the partner can still use.")
+    available: float = Field(description="Cash the partner can still use — real money, counted in pp0.")
     hold: float = Field(description="Cash already committed at the partner.")
 
 
@@ -225,31 +236,48 @@ class CashInvestmentBlockAmountInfo(DtoModel):
 class CashInvestmentInfo(DtoModel):
     """One cash-balance record of ``get_cash_investment`` (operation 4.15).
 
-    Field names keep the API's spelling, including its ``pp0forBF``/``pp0ForBond``
-    capitalisation split and the ``cashDevident``/``avalBondBlockAmount`` typos;
-    ``fullName`` comes back as the four-character string ``"null"`` rather than JSON null.
+    TCBS spreads the money over four layers. Read them apart — do not add them into one number:
+
+    * **Cash at TCBS** — ``bodBalance``, with ``cashBalance`` as the document's twin of it. This
+      is the money actually sitting in the sub-account.
+    * **Cash at the IA partner** — ``bankAvlBalance`` and each ``iaInfos[].available``. Real money
+      held at the partner (e.g. TCB), a layer of its own and not a loan.
+    * **In transit** — ``balance``, a field the API document does not declare. It can be
+      **negative**, and a negative value means money still moving — unsettled sells and pending
+      settlements — not an overdraft. It is not available cash.
+    * **Committed** — ``buyingAmount``, ``secureAmtPO``, ``blockAmount`` and the ``*BlockAmount``
+      counters: cash earmarked for pending orders, still the account's money but not free.
+
+    ``pp0`` is what can actually be spent across those layers. It is **not** a margin or leverage
+    figure, so ``pp0`` above ``bodBalance`` does not mean a loan is in use.
+
+    Field names keep the API's spelling, including its ``pp0forBF``/``pp0ForBond`` capitalisation
+    split and the ``cashDevident``/``avalBondBlockAmount`` typos; ``fullName`` comes back as the
+    four-character string ``"null"`` rather than JSON null.
     """
 
     object: str = Field(description="Envelope object name, cashInvestment.")
-    pp0forBF: float = Field(description="Basic purchasing power for BOND/FUND products.")
-    pp0ForBond: float = Field(description="Basic purchasing power for bonds, the sibling of pp0forBF.")
-    bankAvlBalanceBF: float = Field(description="Total IA available balance for BOND/FUND.")
-    bodBalance: float = Field(description="Cash at TCBS.")
-    cashBalance: float = Field(description="Cash balance.")
+    pp0forBF: float = Field(description="Basic purchasing power for BOND/FUND — spendable cash, not leverage.")
+    pp0ForBond: float = Field(description="Basic purchasing power for bonds; mirrors pp0forBF in every sample.")
+    bankAvlBalanceBF: float = Field(description="IA-partner cash available for BOND/FUND products.")
+    bodBalance: float = Field(description="Cash at TCBS — the money actually in the sub-account.")
+    cashBalance: float = Field(description="Cash at TCBS; the document calls it simply 'tiền mặt'.")
     stockBlockAmount: float = Field(description="Cash blocked for stock orders.")
     dsecured: float = Field(description="Not documented by TCBS; 0 in the sampled record.")
     accountNo: str = Field(description="Account number.")
     custodyID: str = Field(description="Custody account number.")
     fullName: str = Field(description='Holder name — the four-character string "null" in the sampled payload.')
-    balance: float = Field(description="Cash balance.")
+    balance: float = Field(
+        description="In-transit; not in the document. Negative means unsettled, not an overdraft, not spendable cash.",
+    )
     avlAdvanceAmount: float = Field(description="Advance amount already used. Not documented by TCBS.")
-    buyingAmount: float = Field(description="Cash committed to pending stock buys.")
+    buyingAmount: float = Field(description="Cash committed to pending buy orders — earmarked, still the account's.")
     blockAmount: float = Field(description="Total cash blocked.")
     cashDevident: float = Field(description="Cash dividend pending (TCBS's spelling).")
-    bankAvlBalance: float = Field(description="Balance available at the IA partner.")
+    bankAvlBalance: float = Field(description="Cash held at the IA partner — a real-money layer of its own.")
     bankBlockAmount: float = Field(description="Cash blocked at the IA partner.")
     avlWithdraw: float = Field(description="Cash available to withdraw.")
-    pp0: float = Field(description="Basic purchasing power.")
+    pp0: float = Field(description="Basic purchasing power: spendable cash, not leverage.")
     secureAmtPO: float = Field(description="Cash secured for pending orders.")
     bondBlockAmount: float = Field(description="Cash blocked for bond orders.")
     fundBlockAmount: float = Field(description="Cash blocked for fund orders.")
@@ -277,7 +305,11 @@ class CashInvestmentResponse(DtoModel):
 
 
 class CashStatementDetail(DtoModel):
-    """One line of a sub-account's cash statement."""
+    """One line of a sub-account's cash statement.
+
+    ``transactionDate`` carries the wire key ``transationDate`` — TCBS's spelling, missing the
+    second ``c`` — as an alias, so the field keeps a readable name and still decodes.
+    """
 
     custodyID: str = Field(description="Custody ID.")
     transactionCode: str = Field(description="Transaction code.")
@@ -285,8 +317,10 @@ class CashStatementDetail(DtoModel):
     debitAmount: float = Field(description="Debit amount.")
     creditAmount: float = Field(description="Credit amount.")
     businessDate: str = Field(description="Business date.")
-    transactionDate: str = Field(description="Transaction date.")
+    transactionDate: str = Field(alias="transationDate", description="Transaction date — wire key transationDate.")
     descriptions: str = Field(description="Description.")
+    transactionNum: str | None = Field(default=None, description="Transaction number.")
+    accountNo: str | None = Field(default=None, description="Account number.")
 
 
 class CashStatementPage(DtoModel):

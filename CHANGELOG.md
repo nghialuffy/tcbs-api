@@ -7,6 +7,8 @@ All notable changes to this project are documented in this file, following
 
 - **Breaking:** the write endpoints are gone (19 read-only operations remain) and the DTOs are pydantic v2 models.
 - Every DTO field is described; the models follow live payloads where the document is wrong (see the README).
+- Cash statements with rows now decode: `transactionDate` reads the wire key `transationDate`, and `transactionNum`/`accountNo` are modelled.
+- DTO descriptions re-verified against live payloads: 5.4's `side`/`color`, 5.6–5.8's `t`, 5.11's `secType`, and the cash layers — `balance` may be negative (in transit, not an overdraft), `pp0` is cash-backed rather than margin, and `minBuyQuantity` is not the exchange round-lot rule.
 
 ## [0.0.3] - 2026-09-21
 

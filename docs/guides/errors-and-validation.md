@@ -14,7 +14,7 @@ import requests
 from tcbs_api.service import stock as stock_service
 
 try:
-    orders = stock_service.get_orders(account_no="0001201435", token=token)
+    orders = stock_service.get_orders(account_no="0001A23456", token=token)
 except requests.HTTPError as exc:
     print(exc.response.status_code, exc.response.json())
 ```
@@ -69,9 +69,9 @@ Parsing leans lenient, so a payload carrying something new is not an error:
   `30500.0`, which is how 5.3's quoted prices and 5.11's `newPrice` read as numbers; anything
   that may be fractional is a `float` rather than an `int` for the same reason.
 
-Fields whose JSON type no live value pinned down stay `Any`: `avatarData`, `personalBasicInfo`,
-an `rmRefInfo` item, 5.3's `sellForeignQtty`, 5.5's `pcps`/`hc`/`ac`/`pcpc` and `as_`, 5.4's
-`color`, and 5.7's `d`.
+Fields whose JSON type no live value pinned down stay `Any`: `avatarData`, 5.3's `sellForeignQtty`,
+and 5.5's `pcps`/`hc`/`ac`/`pcpc` and `as_`. `personalBasicInfo` and an `rmRefInfo` item stay raw
+`dict`s because no payload pinned their shape down.
 
 ## Getting the payload back out
 

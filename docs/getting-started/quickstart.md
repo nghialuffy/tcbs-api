@@ -36,7 +36,7 @@ function needs.
 ```python
 from tcbs_api.service import account as account_service
 
-custody_code = "0001201435"
+custody_code = "0001C23456"
 info = account_service.get_subaccount_info(
     custody_code,
     "basicInfo,personalInfo:fullName,bankSubAccounts",
@@ -55,12 +55,12 @@ every block. See [Account information](../guides/account-information.md).
 ```python
 from tcbs_api.service import stock as stock_service
 
-holdings = stock_service.get_asset_stock_by_sub_account("0001F77149", token)
+holdings = stock_service.get_asset_stock_by_sub_account("0001A23456", token)
 for holding in holdings.stock:
     print(holding.symbol, holding.availableTrading, holding.currentPrice, holding.totalQtty)
 
-cash = stock_service.get_cash_investment("0001F77149", token)
-print(cash.data[0].balance, cash.data[0].pp0, cash.data[0].blockAmountInfo.blockAmountTotal)
+cash = stock_service.get_cash_investment("0001A23456", token)
+print(cash.data[0].bodBalance, cash.data[0].pp0, cash.data[0].blockAmountInfo.blockAmountTotal)
 ```
 
 See [Holdings and cash](../guides/holdings-and-cash.md).
