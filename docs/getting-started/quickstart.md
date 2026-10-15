@@ -60,7 +60,7 @@ for holding in holdings.stock:
     print(holding.symbol, holding.availableTrading, holding.currentPrice, holding.totalQtty)
 
 cash = stock_service.get_cash_investment("0001A23456", token)
-print(cash.data[0].balance, cash.data[0].pp0, cash.data[0].blockAmountInfo.blockAmountTotal)
+print(cash.data[0].bodBalance, cash.data[0].pp0, cash.data[0].blockAmountInfo.blockAmountTotal)
 ```
 
 See [Holdings and cash](../guides/holdings-and-cash.md).

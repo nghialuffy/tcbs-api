@@ -54,12 +54,12 @@ A few payloads stay deliberately raw, because nothing pinned their shape down:
 
 ### Every field is described
 
-All 437 fields on these models carry a `Field(description=...)`, so `model_json_schema()` — and
+All 439 fields on these models carry a `Field(description=...)`, so `model_json_schema()` — and
 this documentation, which is generated from it — explains the payload. The text comes from the
 OpenAPI document where the document has it; from 5.11's own documentation page, whose response
 table is hand-written precisely because the document declares none; and from the captured
 payloads otherwise. A field nothing explains says so instead of guessing: 5.5's `rcp`/`pcp`,
-5.4's `color`, 5.7's `d`, the five `Any` fields 5.5 sends as null, and the 4.14/4.15 counters
+5.4's `color`, the five `Any` fields 5.5 sends as null, and the 4.14/4.15 counters
 whose meaning only TCBS knows.
 
 ## Operational notes
